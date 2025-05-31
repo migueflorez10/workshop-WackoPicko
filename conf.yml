@@ -4,3 +4,6 @@ working_dir: .
 sast: 
   include:
     - .
+output: 
+  file_path: ./test-file.csv
+  format: CSV 
