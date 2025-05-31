@@ -1,0 +1,37 @@
+name: Security Vulnerability Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  docker-build-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: docker build -t wackopicko .
+        # La construcción fallará en el paso de permisos excesivos
+
+      - name: Run permission check
+        id: perm-check
+        run: |
+          if grep -q "chmod 777" Dockerfile; then
+            echo "VULNERABILITY_FOUND=true" >> $GITHUB_ENV
+            echo "::error file=Dockerfile,line=7::Vulnerability ID 405 detected: Excessive permissions (chmod 777)"
+            exit 1
+          fi
+
+      - name: Upload results
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: scan-results
+          path: Dockerfile
